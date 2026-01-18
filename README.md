@@ -21,6 +21,31 @@ A pure Kotlin/JNI wrapper for [PDFium](https://pdfium.googlesource.com/pdfium/) 
 
 ## Installation
 
+### Via JitPack (Recommended)
+
+1. Add the JitPack repository to your root `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+```
+
+2. Add the dependency to your app level `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("com.github.HyntixHQ:KotlinPdfium:1.0.0")
+}
+```
+
+### Manual Installation
+
 Add the library module to your project:
 
 ```kotlin

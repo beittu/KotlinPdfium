@@ -1,10 +1,9 @@
 plugins {
-    id("com.android.library")
+    alias(libs.plugins.android.library)
     id("maven-publish")
 }
 
 android {
-    // ... existing android block ...
     namespace = "com.hyntix.pdfium"
     compileSdk = 36
     ndkVersion = "29.0.14206865"

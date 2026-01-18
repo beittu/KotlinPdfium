@@ -1,9 +1,10 @@
 plugins {
     id("com.android.library")
-    alias(libs.plugins.kotlin.android)
+    id("maven-publish")
 }
 
 android {
+    // ... existing android block ...
     namespace = "com.hyntix.pdfium"
     compileSdk = 36
     ndkVersion = "29.0.14206865"
@@ -42,14 +43,31 @@ android {
         targetCompatibility = JavaVersion.VERSION_21
     }
     
-    kotlinOptions {
-        jvmTarget = "21"
-    }
-    
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
+        }
+    }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = "com.github.HyntixHQ"
+            artifactId = "KotlinPdfium"
+            version = "1.0.0"
+
+            afterEvaluate {
+                from(components["release"])
+            }
         }
     }
 }

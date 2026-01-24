@@ -17,6 +17,7 @@ A pure Kotlin/JNI wrapper for [PDFium](https://pdfium.googlesource.com/pdfium/) 
 - 📋 **Forms** - Interactive form filling support
 - 🔐 **Signatures** - Read digital signature information
 - 📎 **Attachments** - Access embedded files
+- 🔗 **Web Links** - Auto-detect and extract URLs from text
 - ♿ **Accessibility** - Structure tree for tagged PDFs
 
 ## Installation
@@ -40,7 +41,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.HyntixHQ:KotlinPdfium:1.0.1")
+    implementation("com.github.HyntixHQ:KotlinPdfium:1.0.2")
 }
 ```
 
@@ -107,6 +108,7 @@ PdfiumCore.destroyLibrary()
 | `PdfBookmark` | Table of contents entry |
 | `PdfAnnotation` | Annotation data |
 | `PdfLink` | Hyperlink information |
+| `PdfWebLinks` | Detected web links (URLs) from text |
 | `PdfAttachment` | Embedded file attachment |
 | `PdfSignature` | Digital signature information |
 
@@ -159,6 +161,14 @@ page.openTextPage().use { textPage ->
     val matches = textPage.search("keyword", matchCase = false)
     matches.forEach { match ->
         val rects = textPage.getTextRects(match.startIndex, match.count)
+    }
+    
+    // Web Link Detection
+    textPage.loadWebLinks().use { webLinks ->
+        for (i in 0 until webLinks.count) {
+            val url = webLinks.getURL(i)
+            val rects = webLinks.getRects(i, textPage)
+        }
     }
 }
 ```

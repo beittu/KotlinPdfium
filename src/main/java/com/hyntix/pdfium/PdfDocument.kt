@@ -311,6 +311,24 @@ class PdfDocument internal constructor(
         return (0 until count).map { getSignature(it) }
     }
     
+    // --- Form Support ---
+    
+    /**
+     * Initialize form support for this document.
+     * Required for working with interactive form fields.
+     * 
+     * @return PdfForm instance for form operations, or null if initialization failed
+     */
+    fun initForm(): com.hyntix.pdfium.form.PdfForm? {
+        checkNotClosed()
+        val formPtr = core.initFormFillEnvironment(docPtr)
+        return if (formPtr != 0L) {
+            com.hyntix.pdfium.form.PdfForm(core, docPtr, formPtr)
+        } else {
+            null
+        }
+    }
+    
     override fun toString(): String {
         return "PdfDocument(pageCount=$pageCount, title='$title', closed=$isClosed)"
     }

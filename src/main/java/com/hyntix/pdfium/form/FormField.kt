@@ -65,11 +65,13 @@ data class FormField(
  * Represents an option in a combo box or list box form field.
  * 
  * @property label The display label of the option
- * @property isSelected Whether this option is currently selected
+ * @property value The export value of the option (may be different from label)
+ * @property isSelected Whether this option is currently selected (read-only)
  * @property index The 0-based index of this option in the field
  */
 data class FormFieldOption(
     val label: String,
-    val isSelected: Boolean,
-    val index: Int
+    val value: String,
+    val isSelected: Boolean = false,
+    val index: Int = 0
 )

@@ -78,6 +78,39 @@ class PdfForm(
     }
     
     /**
+     * Set the selection state of a specific option in a combo box or list box field.
+     * 
+     * @param page The page containing the form field
+     * @param field The form field to update
+     * @param optionIndex The index of the option to select/deselect
+     * @param selected True to select, false to deselect
+     * @return True if successful
+     */
+    fun setFormFieldOptionSelection(
+        page: PdfPage,
+        field: FormField,
+        optionIndex: Int,
+        selected: Boolean
+    ): Boolean {
+        checkNotClosed()
+        if (field.annotPtr == 0L) return false
+        return core.setFormFieldOptionSelection(formPtr, page.getPointer(), field.annotPtr, optionIndex, selected)
+    }
+    
+    /**
+     * Get the indices of all selected options in a combo box or list box field.
+     * 
+     * @param page The page containing the form field
+     * @param field The form field to query
+     * @return List of selected option indices
+     */
+    fun getFormFieldSelectedOptions(page: PdfPage, field: FormField): List<Int> {
+        checkNotClosed()
+        val options = getFieldOptions(page, field)
+        return options.filter { it.isSelected }.map { it.index }
+    }
+    
+    /**
      * Close the form and release native resources.
      */
     override fun close() {

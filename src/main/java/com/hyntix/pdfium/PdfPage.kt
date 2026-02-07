@@ -277,17 +277,66 @@ class PdfPage internal constructor(
     /**
      * Get a specific form field by name on this page.
      * 
+     * NOTE: The returned FormField contains an annotation pointer that must be
+     * closed after use. Call closeFormField() when done with the field.
+     * 
      * @param formPtr The form handle pointer from PdfForm
      * @param name The name of the form field to find
      * @return The form field if found, null otherwise
      */
     fun getFormFieldByName(formPtr: Long, name: String): com.hyntix.pdfium.form.FormField? {
         checkNotClosed()
-        return getFormFields(formPtr).firstOrNull { it.name == name }
+        if (formPtr == 0L) return null
+        
+        val count = core.getFormFieldCount(formPtr, pagePtr)
+        
+        for (i in 0 until count) {
+            val annotPtr = core.getFormFieldAtIndex(formPtr, pagePtr, i)
+            if (annotPtr != 0L) {
+                val typeValue = core.getFormFieldType(formPtr, annotPtr)
+                val type = com.hyntix.pdfium.form.FormFieldType.fromValue(typeValue)
+                
+                // Only process actual form fields (not all annotations)
+                if (type != com.hyntix.pdfium.form.FormFieldType.UNKNOWN) {
+                    val fieldName = core.getFormFieldName(formPtr, annotPtr)
+                    
+                    if (fieldName == name) {
+                        // Found the field - get its details
+                        val value = core.getFormFieldValue(formPtr, annotPtr)
+                        val rectArray = core.getAnnotRect(annotPtr)
+                        val rect = android.graphics.RectF(
+                            rectArray[0].toFloat(),
+                            rectArray[1].toFloat(),
+                            rectArray[2].toFloat(),
+                            rectArray[3].toFloat()
+                        )
+                        
+                        return com.hyntix.pdfium.form.FormField(
+                            name = fieldName,
+                            type = type,
+                            value = value,
+                            pageIndex = index,
+                            rect = rect,
+                            annotPtr = annotPtr
+                        )
+                    } else {
+                        // Not the field we're looking for, close it
+                        core.closeAnnot(annotPtr)
+                    }
+                } else {
+                    // Not a form field, close it
+                    core.closeAnnot(annotPtr)
+                }
+            }
+        }
+        
+        return null
     }
 
     /**
      * Set the value of a form field by name.
+     * 
+     * This method finds the field, sets its value, and automatically closes the field.
      * 
      * @param formPtr The form handle pointer from PdfForm
      * @param fieldName The name of the form field
@@ -296,8 +345,13 @@ class PdfPage internal constructor(
      */
     fun setFormFieldValue(formPtr: Long, fieldName: String, value: String): Boolean {
         checkNotClosed()
-        val field = getFormFieldByName(formPtr, fieldName) ?: return false
-        return setFormFieldValue(formPtr, field, value)
+        val field = getFormFieldByName(formPtr, fieldName)
+        if (field != null) {
+            val success = setFormFieldValue(formPtr, field, value)
+            closeFormField(field)
+            return success
+        }
+        return false
     }
 
     /**

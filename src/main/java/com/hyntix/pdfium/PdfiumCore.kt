@@ -372,7 +372,6 @@ class PdfiumCore {
     private external fun nativeGetFormFieldOptionCount(formPtr: Long, annotPtr: Long): Int
     private external fun nativeGetFormFieldOptionLabel(formPtr: Long, annotPtr: Long, index: Int): String?
     private external fun nativeIsFormFieldOptionSelected(formPtr: Long, annotPtr: Long, index: Int): Boolean
-    private external fun nativeSetFormFieldOptionSelection(formPtr: Long, pagePtr: Long, annotPtr: Long, index: Int, selected: Boolean): Boolean
 
     // Form Field Operations
     internal fun getFormFieldCount(formPtr: Long, pagePtr: Long): Int {
@@ -409,10 +408,6 @@ class PdfiumCore {
 
     internal fun isFormFieldOptionSelected(formPtr: Long, annotPtr: Long, index: Int): Boolean {
         return nativeIsFormFieldOptionSelected(formPtr, annotPtr, index)
-    }
-
-    internal fun setFormFieldOptionSelection(formPtr: Long, pagePtr: Long, annotPtr: Long, index: Int, selected: Boolean): Boolean {
-        return nativeSetFormFieldOptionSelection(formPtr, pagePtr, annotPtr, index, selected)
     }
 
     

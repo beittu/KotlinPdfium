@@ -1253,7 +1253,7 @@ Java_com_hyntix_pdfium_PdfiumCore_nativeSetFormFieldValue(JNIEnv *env, jobject t
     
     // Create null-terminated wide string
     unsigned short *wValue = new unsigned short[valueLen + 1];
-    for (int i = 0; i < valueLen; i++) {
+    for (jsize i = 0; i < valueLen; i++) {
         wValue[i] = (unsigned short) valueChars[i];
     }
     wValue[valueLen] = 0;
@@ -1319,25 +1319,6 @@ Java_com_hyntix_pdfium_PdfiumCore_nativeIsFormFieldOptionSelected(JNIEnv *env, j
     
     return FPDFAnnot_IsOptionSelected(formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr,
                                       annot, index) ? JNI_TRUE : JNI_FALSE;
-}
-
-/**
- * Set option selection
- */
-JNIEXPORT jboolean JNICALL
-Java_com_hyntix_pdfium_PdfiumCore_nativeSetFormFieldOptionSelection(JNIEnv *env, jobject thiz,
-                                                                     jlong formPtr, jlong pagePtr,
-                                                                     jlong annotPtr, jint index,
-                                                                     jboolean selected) {
-    FPDF_FORMHANDLE formHandle = (FPDF_FORMHANDLE) formPtr;
-    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
-    
-    if (!annot) return JNI_FALSE;
-    
-    // Note: PDFium may not have a direct API for setting individual options
-    // This is a placeholder - actual implementation may need to use FPDFAnnot_SetStringValue
-    // with appropriate option values
-    return JNI_FALSE;
 }
 
 // ----------------------------------------------------------------------------

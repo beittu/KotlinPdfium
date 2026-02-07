@@ -204,6 +204,9 @@ class PdfPage internal constructor(
      * Get all form fields on this page.
      * Requires a form handle to be initialized via PdfForm.
      * 
+     * NOTE: The returned FormField objects contain annotation pointers that must be
+     * closed after use to prevent memory leaks. Call closeFormField() when done with each field.
+     * 
      * @param formPtr The form handle pointer from PdfForm
      * @return List of all form fields on this page
      */
@@ -248,6 +251,27 @@ class PdfPage internal constructor(
         }
         
         return fields
+    }
+
+    /**
+     * Close a form field and release its native resources.
+     * Call this when you're done using a FormField to prevent memory leaks.
+     * 
+     * @param field The form field to close
+     */
+    fun closeFormField(field: com.hyntix.pdfium.form.FormField) {
+        if (field.annotPtr != 0L) {
+            core.closeAnnot(field.annotPtr)
+        }
+    }
+
+    /**
+     * Close multiple form fields.
+     * 
+     * @param fields The form fields to close
+     */
+    fun closeFormFields(fields: List<com.hyntix.pdfium.form.FormField>) {
+        fields.forEach { closeFormField(it) }
     }
 
     /**

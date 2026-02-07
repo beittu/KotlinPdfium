@@ -21,7 +21,6 @@ object FormDataExporter {
             File(filePath).writeText(json)
             true
         } catch (e: Exception) {
-            e.printStackTrace()
             false
         }
     }
@@ -37,7 +36,6 @@ object FormDataExporter {
             val json = File(filePath).readText()
             importFromJson(json)
         } catch (e: Exception) {
-            e.printStackTrace()
             null
         }
     }
@@ -62,7 +60,6 @@ object FormDataExporter {
         return try {
             FormDataJsonAdapter.deserialize(json)
         } catch (e: Exception) {
-            e.printStackTrace()
             null
         }
     }

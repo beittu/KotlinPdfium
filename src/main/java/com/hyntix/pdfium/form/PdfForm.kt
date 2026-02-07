@@ -215,7 +215,6 @@ class PdfForm(
             val snapshot = FormDataSnapshot.fromJson(json)
             restoreFromSnapshot(snapshot)
         } catch (e: Exception) {
-            e.printStackTrace()
             false
         }
     }
@@ -275,7 +274,6 @@ class PdfForm(
             }
             return true
         } catch (e: Exception) {
-            e.printStackTrace()
             return false
         }
     }

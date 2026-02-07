@@ -368,7 +368,6 @@ class PdfDocument internal constructor(
             val snapshot = com.hyntix.pdfium.form.FormDataSnapshot.fromJson(json)
             importFormData(snapshot)
         } catch (e: Exception) {
-            e.printStackTrace()
             false
         }
     }

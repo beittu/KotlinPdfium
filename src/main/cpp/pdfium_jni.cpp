@@ -2864,7 +2864,9 @@ Java_com_hyntix_pdfium_PdfiumCore_nativeGetFormFieldDefaultValue(JNIEnv *env, jo
     FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
     if (!form || !annot) return nullptr;
     
-    // Get the default value (DV entry) from the form field
+    // Note: PDFium doesn't provide a direct API to get the default value (DV entry).
+    // The current implementation returns the current field value as a fallback.
+    // To get the true default value, one would need to access the field dictionary directly.
     unsigned long bufSize = FPDFAnnot_GetFormFieldValue(form, annot, nullptr, 0);
     if (bufSize <= 2) return env->NewStringUTF("");
     

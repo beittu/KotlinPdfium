@@ -1137,6 +1137,191 @@ Java_com_hyntix_pdfium_PdfiumCore_nativeFPDFFFLDraw(JNIEnv *env, jobject thiz,
 }
 
 // ----------------------------------------------------------------------------
+// Form Field Enumeration and Value Operations
+// ----------------------------------------------------------------------------
+
+/**
+ * Get the count of form fields (annotations) on a page
+ */
+JNIEXPORT jint JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetFormFieldCount(JNIEnv *env, jobject thiz,
+                                                           jlong formPtr, jlong pagePtr) {
+    FPDF_FORMHANDLE formHandle = (FPDF_FORMHANDLE) formPtr;
+    FPDF_PAGE page = (FPDF_PAGE) pagePtr;
+    if (!page) return 0;
+    
+    // Get the count of all annotations on the page
+    return FPDFPage_GetAnnotCount(page);
+}
+
+/**
+ * Get form field annotation at index
+ */
+JNIEXPORT jlong JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetFormFieldAtIndex(JNIEnv *env, jobject thiz,
+                                                             jlong formPtr, jlong pagePtr, jint index) {
+    FPDF_PAGE page = (FPDF_PAGE) pagePtr;
+    if (!page) return 0;
+    
+    FPDF_ANNOTATION annot = FPDFPage_GetAnnot(page, index);
+    return (jlong) annot;
+}
+
+/**
+ * Get form field type
+ */
+JNIEXPORT jint JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetFormFieldType(JNIEnv *env, jobject thiz,
+                                                          jlong formPtr, jlong annotPtr) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return 0;
+    
+    // Get the form field type using FPDFAnnot_GetFormFieldType
+    return FPDFAnnot_GetFormFieldType(formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr, annot);
+}
+
+/**
+ * Get form field name
+ */
+JNIEXPORT jstring JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetFormFieldName(JNIEnv *env, jobject thiz,
+                                                          jlong formPtr, jlong annotPtr) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return nullptr;
+    
+    // Get the buffer size needed
+    unsigned long bufSize = FPDFAnnot_GetFormFieldName(
+        formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr, annot, nullptr, 0);
+    
+    if (bufSize <= 2) return env->NewStringUTF("");
+    
+    // Allocate buffer for wide string (UTF-16)
+    unsigned short *buffer = new unsigned short[bufSize / 2];
+    FPDFAnnot_GetFormFieldName(formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr, 
+                                annot, buffer, bufSize);
+    
+    // Convert wide string to Java string
+    jstring result = env->NewString((const jchar*)buffer, (bufSize / 2) - 1);
+    delete[] buffer;
+    
+    return result;
+}
+
+/**
+ * Get form field value
+ */
+JNIEXPORT jstring JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetFormFieldValue(JNIEnv *env, jobject thiz,
+                                                           jlong formPtr, jlong annotPtr) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return nullptr;
+    
+    // Get the buffer size needed for the value
+    unsigned long bufSize = FPDFAnnot_GetFormFieldValue(
+        formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr, annot, nullptr, 0);
+    
+    if (bufSize <= 2) return env->NewStringUTF("");
+    
+    // Allocate buffer for wide string (UTF-16)
+    unsigned short *buffer = new unsigned short[bufSize / 2];
+    FPDFAnnot_GetFormFieldValue(formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr, 
+                                 annot, buffer, bufSize);
+    
+    // Convert wide string to Java string
+    jstring result = env->NewString((const jchar*)buffer, (bufSize / 2) - 1);
+    delete[] buffer;
+    
+    return result;
+}
+
+/**
+ * Set form field value
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeSetFormFieldValue(JNIEnv *env, jobject thiz,
+                                                           jlong formPtr, jlong pagePtr,
+                                                           jlong annotPtr, jstring value) {
+    FPDF_FORMHANDLE formHandle = (FPDF_FORMHANDLE) formPtr;
+    FPDF_PAGE page = (FPDF_PAGE) pagePtr;
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    
+    if (!annot || !value) return JNI_FALSE;
+    
+    // Convert Java string to wide string
+    jsize valueLen = env->GetStringLength(value);
+    const jchar *valueChars = env->GetStringChars(value, nullptr);
+    
+    // Create null-terminated wide string
+    unsigned short *wValue = new unsigned short[valueLen + 1];
+    for (jsize i = 0; i < valueLen; i++) {
+        wValue[i] = (unsigned short) valueChars[i];
+    }
+    wValue[valueLen] = 0;
+    
+    // Set the value
+    bool success = FPDFAnnot_SetStringValue(annot, "V", (FPDF_WIDESTRING)wValue);
+    
+    delete[] wValue;
+    env->ReleaseStringChars(value, valueChars);
+    
+    return success ? JNI_TRUE : JNI_FALSE;
+}
+
+/**
+ * Get option count for combo box or list box
+ */
+JNIEXPORT jint JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetFormFieldOptionCount(JNIEnv *env, jobject thiz,
+                                                                 jlong formPtr, jlong annotPtr) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return 0;
+    
+    return FPDFAnnot_GetOptionCount(formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr, annot);
+}
+
+/**
+ * Get option label at index
+ */
+JNIEXPORT jstring JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetFormFieldOptionLabel(JNIEnv *env, jobject thiz,
+                                                                 jlong formPtr, jlong annotPtr,
+                                                                 jint index) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return nullptr;
+    
+    // Get buffer size needed
+    unsigned long bufSize = FPDFAnnot_GetOptionLabel(
+        formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr, annot, index, nullptr, 0);
+    
+    if (bufSize <= 2) return env->NewStringUTF("");
+    
+    // Allocate buffer for wide string
+    unsigned short *buffer = new unsigned short[bufSize / 2];
+    FPDFAnnot_GetOptionLabel(formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr,
+                             annot, index, buffer, bufSize);
+    
+    // Convert to Java string
+    jstring result = env->NewString((const jchar*)buffer, (bufSize / 2) - 1);
+    delete[] buffer;
+    
+    return result;
+}
+
+/**
+ * Check if option is selected
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeIsFormFieldOptionSelected(JNIEnv *env, jobject thiz,
+                                                                   jlong formPtr, jlong annotPtr,
+                                                                   jint index) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return JNI_FALSE;
+    
+    return FPDFAnnot_IsOptionSelected(formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr,
+                                      annot, index) ? JNI_TRUE : JNI_FALSE;
+}
+
+// ----------------------------------------------------------------------------
 // Attachment Support
 // ----------------------------------------------------------------------------
 

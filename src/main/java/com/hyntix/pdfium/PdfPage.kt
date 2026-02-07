@@ -200,6 +200,197 @@ class PdfPage internal constructor(
         return core.mapDeviceToPage(pagePtr, startX, startY, sizeX, sizeY, 0, deviceX, deviceY)
     }
 
+    /**
+     * Get all form fields on this page.
+     * Requires a form handle to be initialized via PdfForm.
+     * 
+     * NOTE: The returned FormField objects contain annotation pointers that must be
+     * closed after use to prevent memory leaks. Call closeFormField() when done with each field.
+     * 
+     * @param formPtr The form handle pointer from PdfForm
+     * @return List of all form fields on this page
+     */
+    fun getFormFields(formPtr: Long): List<com.hyntix.pdfium.form.FormField> {
+        checkNotClosed()
+        if (formPtr == 0L) return emptyList()
+        
+        val count = core.getFormFieldCount(formPtr, pagePtr)
+        val fields = ArrayList<com.hyntix.pdfium.form.FormField>(count)
+        
+        for (i in 0 until count) {
+            val annotPtr = core.getFormFieldAtIndex(formPtr, pagePtr, i)
+            if (annotPtr != 0L) {
+                val typeValue = core.getFormFieldType(formPtr, annotPtr)
+                val type = com.hyntix.pdfium.form.FormFieldType.fromValue(typeValue)
+                
+                // Only process actual form fields (not all annotations)
+                if (type != com.hyntix.pdfium.form.FormFieldType.UNKNOWN) {
+                    val name = core.getFormFieldName(formPtr, annotPtr)
+                    val value = core.getFormFieldValue(formPtr, annotPtr)
+                    val rectArray = core.getAnnotRect(annotPtr)
+                    val rect = android.graphics.RectF(
+                        rectArray[0].toFloat(),
+                        rectArray[1].toFloat(),
+                        rectArray[2].toFloat(),
+                        rectArray[3].toFloat()
+                    )
+                    
+                    fields.add(com.hyntix.pdfium.form.FormField(
+                        name = name,
+                        type = type,
+                        value = value,
+                        pageIndex = index,
+                        rect = rect,
+                        annotPtr = annotPtr
+                    ))
+                } else {
+                    // Close annotations that are not form fields
+                    core.closeAnnot(annotPtr)
+                }
+            }
+        }
+        
+        return fields
+    }
+
+    /**
+     * Close a form field and release its native resources.
+     * Call this when you're done using a FormField to prevent memory leaks.
+     * 
+     * @param field The form field to close
+     */
+    fun closeFormField(field: com.hyntix.pdfium.form.FormField) {
+        if (field.annotPtr != 0L) {
+            core.closeAnnot(field.annotPtr)
+        }
+    }
+
+    /**
+     * Close multiple form fields.
+     * 
+     * @param fields The form fields to close
+     */
+    fun closeFormFields(fields: List<com.hyntix.pdfium.form.FormField>) {
+        fields.forEach { closeFormField(it) }
+    }
+
+    /**
+     * Get a specific form field by name on this page.
+     * 
+     * NOTE: The returned FormField contains an annotation pointer that must be
+     * closed after use. Call closeFormField() when done with the field.
+     * 
+     * @param formPtr The form handle pointer from PdfForm
+     * @param name The name of the form field to find
+     * @return The form field if found, null otherwise
+     */
+    fun getFormFieldByName(formPtr: Long, name: String): com.hyntix.pdfium.form.FormField? {
+        checkNotClosed()
+        if (formPtr == 0L) return null
+        
+        val count = core.getFormFieldCount(formPtr, pagePtr)
+        
+        for (i in 0 until count) {
+            val annotPtr = core.getFormFieldAtIndex(formPtr, pagePtr, i)
+            if (annotPtr != 0L) {
+                val typeValue = core.getFormFieldType(formPtr, annotPtr)
+                val type = com.hyntix.pdfium.form.FormFieldType.fromValue(typeValue)
+                
+                // Only process actual form fields (not all annotations)
+                if (type != com.hyntix.pdfium.form.FormFieldType.UNKNOWN) {
+                    val fieldName = core.getFormFieldName(formPtr, annotPtr)
+                    
+                    if (fieldName == name) {
+                        // Found the field - get its details
+                        val value = core.getFormFieldValue(formPtr, annotPtr)
+                        val rectArray = core.getAnnotRect(annotPtr)
+                        val rect = android.graphics.RectF(
+                            rectArray[0].toFloat(),
+                            rectArray[1].toFloat(),
+                            rectArray[2].toFloat(),
+                            rectArray[3].toFloat()
+                        )
+                        
+                        return com.hyntix.pdfium.form.FormField(
+                            name = fieldName,
+                            type = type,
+                            value = value,
+                            pageIndex = index,
+                            rect = rect,
+                            annotPtr = annotPtr
+                        )
+                    } else {
+                        // Not the field we're looking for, close it
+                        core.closeAnnot(annotPtr)
+                    }
+                } else {
+                    // Not a form field, close it
+                    core.closeAnnot(annotPtr)
+                }
+            }
+        }
+        
+        return null
+    }
+
+    /**
+     * Set the value of a form field by name.
+     * 
+     * This method finds the field, sets its value, and automatically closes the field.
+     * 
+     * @param formPtr The form handle pointer from PdfForm
+     * @param fieldName The name of the form field
+     * @param value The value to set
+     * @return True if successful
+     */
+    fun setFormFieldValue(formPtr: Long, fieldName: String, value: String): Boolean {
+        checkNotClosed()
+        val field = getFormFieldByName(formPtr, fieldName)
+        if (field != null) {
+            val success = setFormFieldValue(formPtr, field, value)
+            closeFormField(field)
+            return success
+        }
+        return false
+    }
+
+    /**
+     * Set the value of a form field.
+     * 
+     * @param formPtr The form handle pointer from PdfForm
+     * @param field The form field to update
+     * @param value The value to set
+     * @return True if successful
+     */
+    fun setFormFieldValue(formPtr: Long, field: com.hyntix.pdfium.form.FormField, value: String): Boolean {
+        checkNotClosed()
+        if (field.annotPtr == 0L) return false
+        return core.setFormFieldValue(formPtr, pagePtr, field.annotPtr, value)
+    }
+
+    /**
+     * Get all options for a combo box or list box form field.
+     * 
+     * @param formPtr The form handle pointer from PdfForm
+     * @param field The form field to get options for
+     * @return List of options, empty if field doesn't support options
+     */
+    fun getFormFieldOptions(formPtr: Long, field: com.hyntix.pdfium.form.FormField): List<com.hyntix.pdfium.form.FormFieldOption> {
+        checkNotClosed()
+        if (!field.hasOptions() || field.annotPtr == 0L) return emptyList()
+        
+        val count = core.getFormFieldOptionCount(formPtr, field.annotPtr)
+        val options = ArrayList<com.hyntix.pdfium.form.FormFieldOption>(count)
+        
+        for (i in 0 until count) {
+            val label = core.getFormFieldOptionLabel(formPtr, field.annotPtr, i)
+            val isSelected = core.isFormFieldOptionSelected(formPtr, field.annotPtr, i)
+            options.add(com.hyntix.pdfium.form.FormFieldOption(label, isSelected, i))
+        }
+        
+        return options
+    }
+
     internal fun getPointer(): Long {
         checkNotClosed()
         return pagePtr

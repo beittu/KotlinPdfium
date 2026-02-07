@@ -362,6 +362,54 @@ class PdfiumCore {
         nativeFPDFFFLDraw(formHandlePtr, bitmap, pagePtr, startX, startY, drawWidth, drawHeight, rotate, flags)
     }
 
+    // Form Field Native methods
+    private external fun nativeGetFormFieldCount(formPtr: Long, pagePtr: Long): Int
+    private external fun nativeGetFormFieldAtIndex(formPtr: Long, pagePtr: Long, index: Int): Long
+    private external fun nativeGetFormFieldType(formPtr: Long, annotPtr: Long): Int
+    private external fun nativeGetFormFieldName(formPtr: Long, annotPtr: Long): String?
+    private external fun nativeGetFormFieldValue(formPtr: Long, annotPtr: Long): String?
+    private external fun nativeSetFormFieldValue(formPtr: Long, pagePtr: Long, annotPtr: Long, value: String): Boolean
+    private external fun nativeGetFormFieldOptionCount(formPtr: Long, annotPtr: Long): Int
+    private external fun nativeGetFormFieldOptionLabel(formPtr: Long, annotPtr: Long, index: Int): String?
+    private external fun nativeIsFormFieldOptionSelected(formPtr: Long, annotPtr: Long, index: Int): Boolean
+
+    // Form Field Operations
+    internal fun getFormFieldCount(formPtr: Long, pagePtr: Long): Int {
+        return nativeGetFormFieldCount(formPtr, pagePtr)
+    }
+
+    internal fun getFormFieldAtIndex(formPtr: Long, pagePtr: Long, index: Int): Long {
+        return nativeGetFormFieldAtIndex(formPtr, pagePtr, index)
+    }
+
+    internal fun getFormFieldType(formPtr: Long, annotPtr: Long): Int {
+        return nativeGetFormFieldType(formPtr, annotPtr)
+    }
+
+    internal fun getFormFieldName(formPtr: Long, annotPtr: Long): String {
+        return nativeGetFormFieldName(formPtr, annotPtr) ?: ""
+    }
+
+    internal fun getFormFieldValue(formPtr: Long, annotPtr: Long): String {
+        return nativeGetFormFieldValue(formPtr, annotPtr) ?: ""
+    }
+
+    internal fun setFormFieldValue(formPtr: Long, pagePtr: Long, annotPtr: Long, value: String): Boolean {
+        return nativeSetFormFieldValue(formPtr, pagePtr, annotPtr, value)
+    }
+
+    internal fun getFormFieldOptionCount(formPtr: Long, annotPtr: Long): Int {
+        return nativeGetFormFieldOptionCount(formPtr, annotPtr)
+    }
+
+    internal fun getFormFieldOptionLabel(formPtr: Long, annotPtr: Long, index: Int): String {
+        return nativeGetFormFieldOptionLabel(formPtr, annotPtr, index) ?: ""
+    }
+
+    internal fun isFormFieldOptionSelected(formPtr: Long, annotPtr: Long, index: Int): Boolean {
+        return nativeIsFormFieldOptionSelected(formPtr, annotPtr, index)
+    }
+
     
     // Page Native methods
     private external fun nativeLoadPage(docPtr: Long, pageIndex: Int): Long

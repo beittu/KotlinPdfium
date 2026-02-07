@@ -2225,6 +2225,347 @@ Java_com_hyntix_pdfium_PdfiumCore_nativeGetAnnotFlags(JNIEnv *env, jobject thiz,
     return FPDFAnnot_GetFlags(annot);
 }
 
+// --- Additional Annotation Getters ---
+JNIEXPORT jstring JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetAnnotContents(JNIEnv *env, jobject thiz, jlong annotPtr) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return nullptr;
+    
+    unsigned long bufSize = FPDFAnnot_GetStringValue(annot, "Contents", nullptr, 0);
+    if (bufSize <= 2) return env->NewStringUTF("");
+    
+    unsigned short *buffer = new unsigned short[bufSize / 2];
+    FPDFAnnot_GetStringValue(annot, "Contents", buffer, bufSize);
+    jstring result = env->NewString((const jchar*)buffer, (bufSize / 2) - 1);
+    delete[] buffer;
+    return result;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetAnnotAuthor(JNIEnv *env, jobject thiz, jlong annotPtr) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return nullptr;
+    
+    unsigned long bufSize = FPDFAnnot_GetStringValue(annot, "T", nullptr, 0);
+    if (bufSize <= 2) return env->NewStringUTF("");
+    
+    unsigned short *buffer = new unsigned short[bufSize / 2];
+    FPDFAnnot_GetStringValue(annot, "T", buffer, bufSize);
+    jstring result = env->NewString((const jchar*)buffer, (bufSize / 2) - 1);
+    delete[] buffer;
+    return result;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetAnnotSubject(JNIEnv *env, jobject thiz, jlong annotPtr) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return nullptr;
+    
+    unsigned long bufSize = FPDFAnnot_GetStringValue(annot, "Subj", nullptr, 0);
+    if (bufSize <= 2) return env->NewStringUTF("");
+    
+    unsigned short *buffer = new unsigned short[bufSize / 2];
+    FPDFAnnot_GetStringValue(annot, "Subj", buffer, bufSize);
+    jstring result = env->NewString((const jchar*)buffer, (bufSize / 2) - 1);
+    delete[] buffer;
+    return result;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetAnnotModificationDate(JNIEnv *env, jobject thiz, jlong annotPtr) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return nullptr;
+    
+    unsigned long bufSize = FPDFAnnot_GetStringValue(annot, "M", nullptr, 0);
+    if (bufSize <= 2) return env->NewStringUTF("");
+    
+    unsigned short *buffer = new unsigned short[bufSize / 2];
+    FPDFAnnot_GetStringValue(annot, "M", buffer, bufSize);
+    jstring result = env->NewString((const jchar*)buffer, (bufSize / 2) - 1);
+    delete[] buffer;
+    return result;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetAnnotCreationDate(JNIEnv *env, jobject thiz, jlong annotPtr) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return nullptr;
+    
+    unsigned long bufSize = FPDFAnnot_GetStringValue(annot, "CreationDate", nullptr, 0);
+    if (bufSize <= 2) return env->NewStringUTF("");
+    
+    unsigned short *buffer = new unsigned short[bufSize / 2];
+    FPDFAnnot_GetStringValue(annot, "CreationDate", buffer, bufSize);
+    jstring result = env->NewString((const jchar*)buffer, (bufSize / 2) - 1);
+    delete[] buffer;
+    return result;
+}
+
+JNIEXPORT jfloat JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetAnnotOpacity(JNIEnv *env, jobject thiz, jlong annotPtr) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return 1.0f;
+    
+    float opacity;
+    if (FPDFAnnot_GetNumberValue(annot, "CA", &opacity)) {
+        return opacity;
+    }
+    return 1.0f;  // Default opacity is 1.0 (fully opaque)
+}
+
+JNIEXPORT jdoubleArray JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetAnnotQuadPoints(JNIEnv *env, jobject thiz, jlong annotPtr) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return nullptr;
+    
+    // Get the number of quad points
+    unsigned long quadPointsCount = FPDFAnnot_GetAttachmentPoints(annot, 0, nullptr);
+    if (quadPointsCount == 0) return nullptr;
+    
+    // Allocate array for all quad points (each has 8 values: 4 points * 2 coords)
+    jdoubleArray result = env->NewDoubleArray(quadPointsCount * 8);
+    if (!result) return nullptr;
+    
+    jdouble *resultData = env->GetDoubleArrayElements(result, nullptr);
+    
+    for (unsigned long i = 0; i < quadPointsCount; i++) {
+        FS_QUADPOINTSF quadPoints;
+        if (FPDFAnnot_GetAttachmentPoints(annot, i, &quadPoints)) {
+            resultData[i * 8 + 0] = quadPoints.x1;
+            resultData[i * 8 + 1] = quadPoints.y1;
+            resultData[i * 8 + 2] = quadPoints.x2;
+            resultData[i * 8 + 3] = quadPoints.y2;
+            resultData[i * 8 + 4] = quadPoints.x3;
+            resultData[i * 8 + 5] = quadPoints.y3;
+            resultData[i * 8 + 6] = quadPoints.x4;
+            resultData[i * 8 + 7] = quadPoints.y4;
+        }
+    }
+    
+    env->ReleaseDoubleArrayElements(result, resultData, 0);
+    return result;
+}
+
+// --- Additional Annotation Setters ---
+JNIEXPORT jboolean JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeSetAnnotAuthor(JNIEnv *env, jobject thiz,
+                                                       jlong annotPtr, jstring author) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return JNI_FALSE;
+    
+    jsize len = env->GetStringLength(author);
+    const jchar *wAuthor = env->GetStringChars(author, nullptr);
+    
+    unsigned short *buffer = new unsigned short[len + 1];
+    for (int i = 0; i < len; i++) {
+        buffer[i] = (unsigned short) wAuthor[i];
+    }
+    buffer[len] = 0;
+    
+    jboolean result = FPDFAnnot_SetStringValue(annot, "T", buffer) ? JNI_TRUE : JNI_FALSE;
+    
+    delete[] buffer;
+    env->ReleaseStringChars(author, wAuthor);
+    return result;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeSetAnnotSubject(JNIEnv *env, jobject thiz,
+                                                        jlong annotPtr, jstring subject) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return JNI_FALSE;
+    
+    jsize len = env->GetStringLength(subject);
+    const jchar *wSubject = env->GetStringChars(subject, nullptr);
+    
+    unsigned short *buffer = new unsigned short[len + 1];
+    for (int i = 0; i < len; i++) {
+        buffer[i] = (unsigned short) wSubject[i];
+    }
+    buffer[len] = 0;
+    
+    jboolean result = FPDFAnnot_SetStringValue(annot, "Subj", buffer) ? JNI_TRUE : JNI_FALSE;
+    
+    delete[] buffer;
+    env->ReleaseStringChars(subject, wSubject);
+    return result;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeSetAnnotOpacity(JNIEnv *env, jobject thiz,
+                                                        jlong annotPtr, jfloat opacity) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return JNI_FALSE;
+    
+    // Clamp opacity to valid range [0.0, 1.0]
+    float clampedOpacity = opacity < 0.0f ? 0.0f : (opacity > 1.0f ? 1.0f : opacity);
+    return FPDFAnnot_SetNumberValue(annot, "CA", clampedOpacity) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeSetAnnotQuadPoints(JNIEnv *env, jobject thiz,
+                                                           jlong annotPtr, jdoubleArray quadPoints) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot || !quadPoints) return JNI_FALSE;
+    
+    jsize len = env->GetArrayLength(quadPoints);
+    if (len % 8 != 0) return JNI_FALSE;  // Must be multiple of 8 (4 points * 2 coords)
+    
+    jdouble *pointsData = env->GetDoubleArrayElements(quadPoints, nullptr);
+    
+    // Clear existing quad points
+    FPDFAnnot_SetAttachmentPoints(annot, 0, nullptr, 0);
+    
+    // Set new quad points
+    jsize numQuads = len / 8;
+    for (jsize i = 0; i < numQuads; i++) {
+        FS_QUADPOINTSF quad;
+        quad.x1 = (float) pointsData[i * 8 + 0];
+        quad.y1 = (float) pointsData[i * 8 + 1];
+        quad.x2 = (float) pointsData[i * 8 + 2];
+        quad.y2 = (float) pointsData[i * 8 + 3];
+        quad.x3 = (float) pointsData[i * 8 + 4];
+        quad.y3 = (float) pointsData[i * 8 + 5];
+        quad.x4 = (float) pointsData[i * 8 + 6];
+        quad.y4 = (float) pointsData[i * 8 + 7];
+        
+        if (!FPDFAnnot_AppendAttachmentPoints(annot, &quad)) {
+            env->ReleaseDoubleArrayElements(quadPoints, pointsData, 0);
+            return JNI_FALSE;
+        }
+    }
+    
+    env->ReleaseDoubleArrayElements(quadPoints, pointsData, 0);
+    return JNI_TRUE;
+}
+
+// --- Ink Annotation Functions ---
+JNIEXPORT jobjectArray JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetAnnotInkList(JNIEnv *env, jobject thiz, jlong annotPtr) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return nullptr;
+    
+    // Get number of strokes (paths) in the ink annotation
+    unsigned long strokeCount = FPDFAnnot_GetInkListCount(annot);
+    if (strokeCount == 0) return nullptr;
+    
+    // Create outer array for strokes
+    jclass doubleArrayClass = env->FindClass("[D");
+    jobjectArray strokesArray = env->NewObjectArray(strokeCount, doubleArrayClass, nullptr);
+    if (!strokesArray) return nullptr;
+    
+    for (unsigned long i = 0; i < strokeCount; i++) {
+        // Get number of points in this stroke
+        unsigned long pointCount = FPDFAnnot_GetInkListPath(annot, i, nullptr, 0);
+        if (pointCount == 0) continue;
+        
+        // Create array for this stroke's points
+        jdoubleArray pointsArray = env->NewDoubleArray(pointCount * 2);  // x,y pairs
+        if (!pointsArray) continue;
+        
+        // Get the points
+        FS_POINTF *points = new FS_POINTF[pointCount];
+        if (FPDFAnnot_GetInkListPath(annot, i, points, pointCount)) {
+            jdouble *pointsData = env->GetDoubleArrayElements(pointsArray, nullptr);
+            for (unsigned long j = 0; j < pointCount; j++) {
+                pointsData[j * 2 + 0] = points[j].x;
+                pointsData[j * 2 + 1] = points[j].y;
+            }
+            env->ReleaseDoubleArrayElements(pointsArray, pointsData, 0);
+        }
+        delete[] points;
+        
+        env->SetObjectArrayElement(strokesArray, i, pointsArray);
+        env->DeleteLocalRef(pointsArray);
+    }
+    
+    return strokesArray;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeSetAnnotInkList(JNIEnv *env, jobject thiz,
+                                                        jlong annotPtr, jobjectArray inkList) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot || !inkList) return JNI_FALSE;
+    
+    jsize strokeCount = env->GetArrayLength(inkList);
+    if (strokeCount == 0) return JNI_FALSE;
+    
+    for (jsize i = 0; i < strokeCount; i++) {
+        jdoubleArray pointsArray = (jdoubleArray) env->GetObjectArrayElement(inkList, i);
+        if (!pointsArray) continue;
+        
+        jsize pointCount = env->GetArrayLength(pointsArray) / 2;  // Divide by 2 for x,y pairs
+        if (pointCount == 0) {
+            env->DeleteLocalRef(pointsArray);
+            continue;
+        }
+        
+        jdouble *pointsData = env->GetDoubleArrayElements(pointsArray, nullptr);
+        
+        // Convert to FS_POINTF array
+        FS_POINTF *points = new FS_POINTF[pointCount];
+        for (jsize j = 0; j < pointCount; j++) {
+            points[j].x = (float) pointsData[j * 2 + 0];
+            points[j].y = (float) pointsData[j * 2 + 1];
+        }
+        
+        // Add the stroke
+        if (!FPDFAnnot_AddInkStroke(annot, points, pointCount)) {
+            delete[] points;
+            env->ReleaseDoubleArrayElements(pointsArray, pointsData, 0);
+            env->DeleteLocalRef(pointsArray);
+            return JNI_FALSE;
+        }
+        
+        delete[] points;
+        env->ReleaseDoubleArrayElements(pointsArray, pointsData, 0);
+        env->DeleteLocalRef(pointsArray);
+    }
+    
+    return JNI_TRUE;
+}
+
+// --- Form Field Option Functions ---
+JNIEXPORT jstring JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeGetFormFieldOptionValue(JNIEnv *env, jobject thiz,
+                                                                 jlong formPtr, jlong annotPtr,
+                                                                 jint index) {
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!annot) return nullptr;
+    
+    // Get buffer size needed
+    unsigned long bufSize = FPDFAnnot_GetOptionLabel(
+        formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr, annot, index, nullptr, 0);
+    
+    if (bufSize <= 2) return env->NewStringUTF("");
+    
+    // For most form fields, the value is the same as the label unless explicitly set
+    // PDFium API doesn't directly expose option values separately from labels in all cases
+    // So we'll return the label as value (which is the common case)
+    unsigned short *buffer = new unsigned short[bufSize / 2];
+    FPDFAnnot_GetOptionLabel(formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr,
+                             annot, index, buffer, bufSize);
+    
+    jstring result = env->NewString((const jchar*)buffer, (bufSize / 2) - 1);
+    delete[] buffer;
+    
+    return result;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_hyntix_pdfium_PdfiumCore_nativeSetFormFieldOptionSelection(JNIEnv *env, jobject thiz,
+                                                                     jlong formPtr, jlong pagePtr,
+                                                                     jlong annotPtr, jint index,
+                                                                     jboolean selected) {
+    FPDF_FORMHANDLE form = (FPDF_FORMHANDLE) formPtr;
+    FPDF_PAGE page = (FPDF_PAGE) pagePtr;
+    FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
+    if (!form || !page || !annot) return JNI_FALSE;
+    
+    return FPDFAnnot_SetOptionSelected(form, annot, index, selected ? 1 : 0) ? JNI_TRUE : JNI_FALSE;
+}
+
 // --- Actions ---
 JNIEXPORT jint JNICALL
 Java_com_hyntix_pdfium_PdfiumCore_nativeGetActionType(JNIEnv *env, jobject thiz, jlong actionPtr) {

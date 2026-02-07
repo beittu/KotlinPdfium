@@ -755,12 +755,53 @@ class PdfiumCore {
     // --- Annotation Getters ---
     private external fun nativeGetAnnotColor(annotPtr: Long, colorType: Int, result: IntArray): Boolean
     private external fun nativeGetAnnotFlags(annotPtr: Long): Int
+    private external fun nativeGetAnnotContents(annotPtr: Long): String?
+    private external fun nativeGetAnnotAuthor(annotPtr: Long): String?
+    private external fun nativeGetAnnotSubject(annotPtr: Long): String?
+    private external fun nativeGetAnnotModificationDate(annotPtr: Long): String?
+    private external fun nativeGetAnnotCreationDate(annotPtr: Long): String?
+    private external fun nativeGetAnnotOpacity(annotPtr: Long): Float
+    private external fun nativeGetAnnotQuadPoints(annotPtr: Long): DoubleArray?
 
     fun getAnnotColor(annotPtr: Long, colorType: Int): IntArray? {
         val result = IntArray(4)
         return if (nativeGetAnnotColor(annotPtr, colorType, result)) result else null
     }
     fun getAnnotFlags(annotPtr: Long) = nativeGetAnnotFlags(annotPtr)
+    fun getAnnotContents(annotPtr: Long) = nativeGetAnnotContents(annotPtr) ?: ""
+    fun getAnnotAuthor(annotPtr: Long) = nativeGetAnnotAuthor(annotPtr) ?: ""
+    fun getAnnotSubject(annotPtr: Long) = nativeGetAnnotSubject(annotPtr) ?: ""
+    fun getAnnotModificationDate(annotPtr: Long) = nativeGetAnnotModificationDate(annotPtr) ?: ""
+    fun getAnnotCreationDate(annotPtr: Long) = nativeGetAnnotCreationDate(annotPtr) ?: ""
+    fun getAnnotOpacity(annotPtr: Long) = nativeGetAnnotOpacity(annotPtr)
+    fun getAnnotQuadPoints(annotPtr: Long) = nativeGetAnnotQuadPoints(annotPtr)
+    
+    // --- Annotation Setters ---
+    private external fun nativeSetAnnotAuthor(annotPtr: Long, author: String): Boolean
+    private external fun nativeSetAnnotSubject(annotPtr: Long, subject: String): Boolean
+    private external fun nativeSetAnnotOpacity(annotPtr: Long, opacity: Float): Boolean
+    private external fun nativeSetAnnotQuadPoints(annotPtr: Long, quadPoints: DoubleArray): Boolean
+    
+    fun setAnnotAuthor(annotPtr: Long, author: String) = nativeSetAnnotAuthor(annotPtr, author)
+    fun setAnnotSubject(annotPtr: Long, subject: String) = nativeSetAnnotSubject(annotPtr, subject)
+    fun setAnnotOpacity(annotPtr: Long, opacity: Float) = nativeSetAnnotOpacity(annotPtr, opacity)
+    fun setAnnotQuadPoints(annotPtr: Long, quadPoints: DoubleArray) = nativeSetAnnotQuadPoints(annotPtr, quadPoints)
+    
+    // --- Ink Annotation Functions ---
+    private external fun nativeGetAnnotInkList(annotPtr: Long): Array<DoubleArray>?
+    private external fun nativeSetAnnotInkList(annotPtr: Long, inkList: Array<DoubleArray>): Boolean
+    
+    fun getAnnotInkList(annotPtr: Long) = nativeGetAnnotInkList(annotPtr)
+    fun setAnnotInkList(annotPtr: Long, inkList: Array<DoubleArray>) = nativeSetAnnotInkList(annotPtr, inkList)
+    
+    // --- Form Field Options ---
+    private external fun nativeGetFormFieldOptionValue(formPtr: Long, annotPtr: Long, index: Int): String?
+    private external fun nativeSetFormFieldOptionSelection(formPtr: Long, pagePtr: Long, annotPtr: Long, index: Int, selected: Boolean): Boolean
+    
+    fun getFormFieldOptionValue(formPtr: Long, annotPtr: Long, index: Int) = nativeGetFormFieldOptionValue(formPtr, annotPtr, index) ?: ""
+    fun setFormFieldOptionSelection(formPtr: Long, pagePtr: Long, annotPtr: Long, index: Int, selected: Boolean) = 
+        nativeSetFormFieldOptionSelection(formPtr, pagePtr, annotPtr, index, selected)
+
 
     // --- Actions ---
     private external fun nativeGetActionType(actionPtr: Long): Int

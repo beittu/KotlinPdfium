@@ -384,8 +384,9 @@ class PdfPage internal constructor(
         
         for (i in 0 until count) {
             val label = core.getFormFieldOptionLabel(formPtr, field.annotPtr, i)
+            val value = core.getFormFieldOptionValue(formPtr, field.annotPtr, i)
             val isSelected = core.isFormFieldOptionSelected(formPtr, field.annotPtr, i)
-            options.add(com.hyntix.pdfium.form.FormFieldOption(label, isSelected, i))
+            options.add(com.hyntix.pdfium.form.FormFieldOption(label, value, isSelected, i))
         }
         
         return options
@@ -394,6 +395,304 @@ class PdfPage internal constructor(
     internal fun getPointer(): Long {
         checkNotClosed()
         return pagePtr
+    }
+
+    // =========================================================================
+    // Annotation API
+    // =========================================================================
+
+    /**
+     * Create a highlight annotation on this page.
+     * 
+     * @param quadPoints Points defining the highlighting region. Each array should have 8 values (4 points).
+     * @param contents Optional text content/comment
+     * @param author Optional author name
+     * @param color Color of the highlight
+     * @return True if the annotation was created successfully
+     */
+    fun createHighlightAnnotation(
+        quadPoints: List<DoubleArray>,
+        contents: String = "",
+        author: String = "",
+        color: com.hyntix.pdfium.annotation.AnnotationColor = com.hyntix.pdfium.annotation.AnnotationColor(255, 255, 0, 128)
+    ): Boolean {
+        checkNotClosed()
+        
+        if (quadPoints.isEmpty() || quadPoints.any { it.size != 8 }) {
+            return false
+        }
+        
+        // Create the annotation
+        val annotPtr = core.createAnnot(pagePtr, 9) // FPDF_ANNOT_HIGHLIGHT = 9
+        if (annotPtr == 0L) return false
+        
+        try {
+            // Set quad points
+            val allPoints = DoubleArray(quadPoints.size * 8)
+            quadPoints.forEachIndexed { index, points ->
+                System.arraycopy(points, 0, allPoints, index * 8, 8)
+            }
+            core.setAnnotQuadPoints(annotPtr, allPoints)
+            
+            // Set color (FPDFANNOT_COLORTYPE_Color = 0)
+            core.setAnnotColor(annotPtr, 0, color.red, color.green, color.blue, color.alpha)
+            
+            // Set opacity
+            core.setAnnotOpacity(annotPtr, color.alpha / 255.0f)
+            
+            // Set contents if provided
+            if (contents.isNotEmpty()) {
+                core.setAnnotContents(annotPtr, contents)
+            }
+            
+            // Set author if provided
+            if (author.isNotEmpty()) {
+                core.setAnnotAuthor(annotPtr, author)
+            }
+            
+            return true
+        } finally {
+            core.closeAnnot(annotPtr)
+        }
+    }
+
+    /**
+     * Create an underline annotation on this page.
+     * 
+     * @param quadPoints Points defining the underline region. Each array should have 8 values (4 points).
+     * @param contents Optional text content/comment
+     * @param author Optional author name
+     * @param color Color of the underline
+     * @return True if the annotation was created successfully
+     */
+    fun createUnderlineAnnotation(
+        quadPoints: List<DoubleArray>,
+        contents: String = "",
+        author: String = "",
+        color: com.hyntix.pdfium.annotation.AnnotationColor = com.hyntix.pdfium.annotation.AnnotationColor(0, 0, 255, 128)
+    ): Boolean {
+        checkNotClosed()
+        
+        if (quadPoints.isEmpty() || quadPoints.any { it.size != 8 }) {
+            return false
+        }
+        
+        // Create the annotation
+        val annotPtr = core.createAnnot(pagePtr, 10) // FPDF_ANNOT_UNDERLINE = 10
+        if (annotPtr == 0L) return false
+        
+        try {
+            // Set quad points
+            val allPoints = DoubleArray(quadPoints.size * 8)
+            quadPoints.forEachIndexed { index, points ->
+                System.arraycopy(points, 0, allPoints, index * 8, 8)
+            }
+            core.setAnnotQuadPoints(annotPtr, allPoints)
+            
+            // Set color
+            core.setAnnotColor(annotPtr, 0, color.red, color.green, color.blue, color.alpha)
+            
+            // Set opacity
+            core.setAnnotOpacity(annotPtr, color.alpha / 255.0f)
+            
+            // Set contents if provided
+            if (contents.isNotEmpty()) {
+                core.setAnnotContents(annotPtr, contents)
+            }
+            
+            // Set author if provided
+            if (author.isNotEmpty()) {
+                core.setAnnotAuthor(annotPtr, author)
+            }
+            
+            return true
+        } finally {
+            core.closeAnnot(annotPtr)
+        }
+    }
+
+    /**
+     * Create a strikeout annotation on this page.
+     * 
+     * @param quadPoints Points defining the strikeout region. Each array should have 8 values (4 points).
+     * @param contents Optional text content/comment
+     * @param author Optional author name
+     * @param color Color of the strikeout
+     * @return True if the annotation was created successfully
+     */
+    fun createStrikeoutAnnotation(
+        quadPoints: List<DoubleArray>,
+        contents: String = "",
+        author: String = "",
+        color: com.hyntix.pdfium.annotation.AnnotationColor = com.hyntix.pdfium.annotation.AnnotationColor(255, 0, 0, 128)
+    ): Boolean {
+        checkNotClosed()
+        
+        if (quadPoints.isEmpty() || quadPoints.any { it.size != 8 }) {
+            return false
+        }
+        
+        // Create the annotation
+        val annotPtr = core.createAnnot(pagePtr, 12) // FPDF_ANNOT_STRIKEOUT = 12
+        if (annotPtr == 0L) return false
+        
+        try {
+            // Set quad points
+            val allPoints = DoubleArray(quadPoints.size * 8)
+            quadPoints.forEachIndexed { index, points ->
+                System.arraycopy(points, 0, allPoints, index * 8, 8)
+            }
+            core.setAnnotQuadPoints(annotPtr, allPoints)
+            
+            // Set color
+            core.setAnnotColor(annotPtr, 0, color.red, color.green, color.blue, color.alpha)
+            
+            // Set opacity
+            core.setAnnotOpacity(annotPtr, color.alpha / 255.0f)
+            
+            // Set contents if provided
+            if (contents.isNotEmpty()) {
+                core.setAnnotContents(annotPtr, contents)
+            }
+            
+            // Set author if provided
+            if (author.isNotEmpty()) {
+                core.setAnnotAuthor(annotPtr, author)
+            }
+            
+            return true
+        } finally {
+            core.closeAnnot(annotPtr)
+        }
+    }
+
+    /**
+     * Create an ink annotation on this page.
+     * 
+     * @param inkList List of stroke paths, where each path contains points [x, y]
+     * @param contents Optional text content/comment
+     * @param author Optional author name
+     * @param color Color of the ink
+     * @return True if the annotation was created successfully
+     */
+    fun createInkAnnotation(
+        inkList: List<com.hyntix.pdfium.annotation.InkPath>,
+        contents: String = "",
+        author: String = "",
+        color: com.hyntix.pdfium.annotation.AnnotationColor = com.hyntix.pdfium.annotation.AnnotationColor(0, 0, 0, 255)
+    ): Boolean {
+        checkNotClosed()
+        
+        if (inkList.isEmpty() || inkList.any { !it.isValid() }) {
+            return false
+        }
+        
+        // Create the annotation
+        val annotPtr = core.createAnnot(pagePtr, 15) // FPDF_ANNOT_INK = 15
+        if (annotPtr == 0L) return false
+        
+        try {
+            // Convert InkPath list to array of DoubleArray
+            val inkArray = Array(inkList.size) { i ->
+                val path = inkList[i]
+                val points = path.points
+                DoubleArray(points.size * 2) { j ->
+                    if (j % 2 == 0) points[j / 2][0] else points[j / 2][1]
+                }
+            }
+            
+            // Set ink list
+            core.setAnnotInkList(annotPtr, inkArray)
+            
+            // Set color
+            core.setAnnotColor(annotPtr, 0, color.red, color.green, color.blue, color.alpha)
+            
+            // Set opacity
+            core.setAnnotOpacity(annotPtr, color.alpha / 255.0f)
+            
+            // Set contents if provided
+            if (contents.isNotEmpty()) {
+                core.setAnnotContents(annotPtr, contents)
+            }
+            
+            // Set author if provided
+            if (author.isNotEmpty()) {
+                core.setAnnotAuthor(annotPtr, author)
+            }
+            
+            return true
+        } finally {
+            core.closeAnnot(annotPtr)
+        }
+    }
+
+    /**
+     * Remove an annotation from the page by index.
+     * 
+     * @param index The 0-based index of the annotation to remove
+     * @return True if the annotation was removed successfully
+     */
+    fun removeAnnotation(index: Int): Boolean {
+        checkNotClosed()
+        return core.removeAnnot(pagePtr, index)
+    }
+
+    /**
+     * Update the contents of an annotation.
+     * 
+     * @param index The 0-based index of the annotation
+     * @param contents The new contents text
+     * @return True if the update was successful
+     */
+    fun updateAnnotationContents(index: Int, contents: String): Boolean {
+        checkNotClosed()
+        val annotPtr = core.getAnnot(pagePtr, index)
+        if (annotPtr == 0L) return false
+        
+        return try {
+            core.setAnnotContents(annotPtr, contents)
+        } finally {
+            core.closeAnnot(annotPtr)
+        }
+    }
+
+    /**
+     * Update the author of an annotation.
+     * 
+     * @param index The 0-based index of the annotation
+     * @param author The new author name
+     * @return True if the update was successful
+     */
+    fun updateAnnotationAuthor(index: Int, author: String): Boolean {
+        checkNotClosed()
+        val annotPtr = core.getAnnot(pagePtr, index)
+        if (annotPtr == 0L) return false
+        
+        return try {
+            core.setAnnotAuthor(annotPtr, author)
+        } finally {
+            core.closeAnnot(annotPtr)
+        }
+    }
+
+    /**
+     * Update the color of an annotation.
+     * 
+     * @param index The 0-based index of the annotation
+     * @param color The new color
+     * @return True if the update was successful
+     */
+    fun updateAnnotationColor(index: Int, color: com.hyntix.pdfium.annotation.AnnotationColor): Boolean {
+        checkNotClosed()
+        val annotPtr = core.getAnnot(pagePtr, index)
+        if (annotPtr == 0L) return false
+        
+        return try {
+            core.setAnnotColor(annotPtr, 0, color.red, color.green, color.blue, color.alpha) &&
+            core.setAnnotOpacity(annotPtr, color.alpha / 255.0f)
+        } finally {
+            core.closeAnnot(annotPtr)
+        }
     }
 }
 

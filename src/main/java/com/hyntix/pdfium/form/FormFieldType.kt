@@ -31,12 +31,14 @@ enum class FormFieldType(val value: Int) {
     SIGNATURE(7);
     
     companion object {
+        private val valueMap = entries.associateBy { it.value }
+        
         /**
          * Convert an integer value to FormFieldType.
          * Returns UNKNOWN if the value doesn't match any known type.
          */
         fun fromValue(value: Int): FormFieldType {
-            return entries.firstOrNull { it.value == value } ?: UNKNOWN
+            return valueMap[value] ?: UNKNOWN
         }
     }
 }

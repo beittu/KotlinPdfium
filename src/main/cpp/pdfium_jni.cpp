@@ -2413,7 +2413,8 @@ Java_com_hyntix_pdfium_PdfiumCore_nativeSetAnnotQuadPoints(JNIEnv *env, jobject 
     
     jdouble *pointsData = env->GetDoubleArrayElements(quadPoints, nullptr);
     
-    // Clear existing quad points
+    // Clear all existing attachment points before setting new ones
+    // This ensures we replace the entire set of quad points rather than appending
     FPDFAnnot_SetAttachmentPoints(annot, 0, nullptr, 0);
     
     // Set new quad points
@@ -2534,15 +2535,17 @@ Java_com_hyntix_pdfium_PdfiumCore_nativeGetFormFieldOptionValue(JNIEnv *env, job
     FPDF_ANNOTATION annot = (FPDF_ANNOTATION) annotPtr;
     if (!annot) return nullptr;
     
-    // Get buffer size needed
+    // Note: PDFium's FPDFAnnot API doesn't provide a separate function to get option values
+    // distinct from labels. In PDF forms, the export value often equals the label unless
+    // explicitly set differently in the PDF. For now, we return the label as the value,
+    // which matches the common case. A more complete implementation would need to access
+    // the underlying form field dictionary directly to distinguish between display labels
+    // and export values.
     unsigned long bufSize = FPDFAnnot_GetOptionLabel(
         formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr, annot, index, nullptr, 0);
     
     if (bufSize <= 2) return env->NewStringUTF("");
     
-    // For most form fields, the value is the same as the label unless explicitly set
-    // PDFium API doesn't directly expose option values separately from labels in all cases
-    // So we'll return the label as value (which is the common case)
     unsigned short *buffer = new unsigned short[bufSize / 2];
     FPDFAnnot_GetOptionLabel(formPtr ? (FPDF_FORMHANDLE)formPtr : nullptr,
                              annot, index, buffer, bufSize);

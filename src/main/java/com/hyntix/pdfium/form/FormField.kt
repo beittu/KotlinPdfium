@@ -66,12 +66,12 @@ data class FormField(
  * 
  * @property label The display label of the option
  * @property value The export value of the option (may be different from label)
- * @property isSelected Whether this option is currently selected
+ * @property isSelected Whether this option is currently selected (read-only)
  * @property index The 0-based index of this option in the field
  */
 data class FormFieldOption(
     val label: String,
     val value: String,
-    var isSelected: Boolean = false,
+    val isSelected: Boolean = false,
     val index: Int = 0
 )

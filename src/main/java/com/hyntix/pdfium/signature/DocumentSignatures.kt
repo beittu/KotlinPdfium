@@ -90,39 +90,32 @@ class DocumentSignatures(
     /**
      * Get the location where document was signed (from signature metadata).
      * 
+     * Note: Current implementation returns empty string as PDFium API doesn't 
+     * provide direct access to signature location field.
+     * 
      * @param sigPtr Native signature pointer
      * @return Location string, or empty if not available
      */
     private fun getSignatureLocation(sigPtr: Long): String {
-        return try {
-            // Attempt to get location from signature dictionary
-            // Note: This requires native support which may not be available
-            ""
-        } catch (e: Exception) {
-            ""
-        }
+        // PDFium API doesn't provide signature location extraction
+        // This would require accessing the signature dictionary directly
+        return ""
     }
     
     /**
      * Extract certificate information from signature.
      * 
+     * Note: Current implementation returns placeholder message as PDFium API doesn't
+     * provide direct certificate extraction. Full implementation would require
+     * parsing the PKCS#7 signature data.
+     * 
      * @param sigPtr Native signature pointer
      * @return Certificate info string with issuer/subject/validity
      */
     private fun extractCertificateInfo(sigPtr: Long): String {
-        return try {
-            // Build certificate info string
-            val info = StringBuilder()
-            
-            // Note: These methods require native implementation
-            // For now, return placeholder
-            info.append("Certificate: ")
-            info.append("Signer information not available in current implementation")
-            
-            info.toString()
-        } catch (e: Exception) {
-            "Certificate information unavailable"
-        }
+        // PDFium API doesn't provide certificate extraction
+        // This would require parsing the signature's Contents stream (PKCS#7 data)
+        return "Certificate: Signer information not available in current implementation"
     }
     
     /**

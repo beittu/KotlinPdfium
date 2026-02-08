@@ -59,10 +59,10 @@ class XFATest {
             assertNotNull("XFA forms object should be created", xfa)
             
             // Note: hasXFAForms() depends on native implementation
-            // For mock PDF, it may return false
+            // For our mock PDF, native PDFium may not detect it as true XFA
+            // The method should execute without error
             val hasXfa = xfa.hasXFAForms()
-            // Don't assert true/false, just verify method works
-            assertTrue("Method should return boolean", hasXfa == true || hasXfa == false)
+            // Verify method executes successfully - value depends on native parsing
             
         } finally {
             TestUtils.cleanupFiles(pdfFile)

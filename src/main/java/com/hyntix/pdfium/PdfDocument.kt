@@ -329,6 +329,137 @@ class PdfDocument internal constructor(
         }
     }
     
+    // --- Form Data Serialization ---
+    
+    /**
+     * Get a snapshot of all form data in the document.
+     *
+     * @return FormDataSnapshot containing all form fields, or null if no forms
+     */
+    fun getFormData(): com.hyntix.pdfium.form.FormDataSnapshot? {
+        checkNotClosed()
+        val form = initForm() ?: return null
+        return try {
+            form.exportFormData()
+        } finally {
+            form.close()
+        }
+    }
+    
+    /**
+     * Export form data as JSON string.
+     *
+     * @return JSON string representation of form data, or null if no forms
+     */
+    fun exportFormDataAsJson(): String? {
+        checkNotClosed()
+        return getFormData()?.toJson()
+    }
+    
+    /**
+     * Import form data from JSON string.
+     *
+     * @param json JSON string containing form data
+     * @return True if import was successful
+     */
+    fun importFormData(json: String): Boolean {
+        checkNotClosed()
+        return try {
+            val snapshot = com.hyntix.pdfium.form.FormDataSnapshot.fromJson(json)
+            importFormData(snapshot)
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    /**
+     * Import form data from a snapshot.
+     *
+     * @param data FormDataSnapshot to import
+     * @return True if import was successful
+     */
+    fun importFormData(data: com.hyntix.pdfium.form.FormDataSnapshot): Boolean {
+        checkNotClosed()
+        val form = initForm() ?: return false
+        return try {
+            form.restoreFromSnapshot(data)
+        } finally {
+            form.close()
+        }
+    }
+    
+    // --- Form Validation ---
+    
+    /**
+     * Validate all form data in the document.
+     *
+     * @return Validation result
+     */
+    fun validateFormData(): com.hyntix.pdfium.form.FormValidationResult {
+        checkNotClosed()
+        val snapshot = getFormData() ?: return com.hyntix.pdfium.form.FormValidationResult(
+            isValid = true,
+            fieldErrors = emptyMap()
+        )
+        val validator = com.hyntix.pdfium.form.FormValidator(snapshot)
+        return validator.validate()
+    }
+    
+    /**
+     * Validate a specific form field.
+     *
+     * @param fieldName Name of the field to validate
+     * @return Field validation result
+     */
+    fun validateFormField(fieldName: String): com.hyntix.pdfium.form.FieldValidationResult {
+        checkNotClosed()
+        val snapshot = getFormData() ?: return com.hyntix.pdfium.form.FieldValidationResult(
+            fieldName = fieldName,
+            isValid = false,
+            errors = listOf("No form data available")
+        )
+        val validator = com.hyntix.pdfium.form.FormValidator(snapshot)
+        return validator.validateField(fieldName)
+    }
+    
+    // --- Signature Support ---
+    
+    /**
+     * Get document signatures handler.
+     *
+     * @return DocumentSignatures instance for accessing signature information
+     */
+    fun getSignatures(): com.hyntix.pdfium.signature.DocumentSignatures {
+        checkNotClosed()
+        return com.hyntix.pdfium.signature.DocumentSignatures(core, docPtr)
+    }
+    
+    // --- XFA Forms ---
+    
+    /**
+     * Check if the document has XFA forms.
+     *
+     * @return True if the document contains XFA forms
+     */
+    fun hasXFAForms(): Boolean {
+        checkNotClosed()
+        return core.hasXFAForms(docPtr)
+    }
+    
+    /**
+     * Get XFA forms handler.
+     *
+     * @return XFAForms instance for accessing XFA data, or null if no XFA forms
+     */
+    fun getXFAForms(): com.hyntix.pdfium.xfa.XFAForms? {
+        checkNotClosed()
+        return if (hasXFAForms()) {
+            com.hyntix.pdfium.xfa.XFAForms(core, docPtr)
+        } else {
+            null
+        }
+    }
+    
     override fun toString(): String {
         return "PdfDocument(pageCount=$pageCount, title='$title', closed=$isClosed)"
     }

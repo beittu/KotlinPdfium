@@ -895,6 +895,59 @@ class PdfiumCore {
     private external fun nativeIsLinearized(availPtr: Long): Boolean
 
     fun isLinearized(availPtr: Long) = nativeIsLinearized(availPtr)
+    
+    // --- Form Data Export/Import ---
+    private external fun nativeExportFormData(formPtr: Long, docPtr: Long): Array<String>?
+    private external fun nativeGetFormFieldDefaultValue(formPtr: Long, annotPtr: Long): String?
+    private external fun nativeIsFormFieldRequired(formPtr: Long, annotPtr: Long): Boolean
+    private external fun nativeIsFormFieldReadOnly(formPtr: Long, annotPtr: Long): Boolean
+    private external fun nativeGetFormFieldMaxLength(formPtr: Long, annotPtr: Long): Int
+    
+    fun exportFormData(formPtr: Long, docPtr: Long) = nativeExportFormData(formPtr, docPtr)
+    fun getFormFieldDefaultValue(formPtr: Long, annotPtr: Long) = nativeGetFormFieldDefaultValue(formPtr, annotPtr)
+    fun isFormFieldRequired(formPtr: Long, annotPtr: Long) = nativeIsFormFieldRequired(formPtr, annotPtr)
+    fun isFormFieldReadOnly(formPtr: Long, annotPtr: Long) = nativeIsFormFieldReadOnly(formPtr, annotPtr)
+    fun getFormFieldMaxLength(formPtr: Long, annotPtr: Long) = nativeGetFormFieldMaxLength(formPtr, annotPtr)
+    
+    // --- Signature Field Support ---
+    private external fun nativeIsSignatureField(annotPtr: Long): Boolean
+    private external fun nativeGetSignatureStatus(annotPtr: Long): Int
+    private external fun nativeGetSignatureCount(docPtr: Long): Int
+    private external fun nativeGetSignatureAtIndex(docPtr: Long, index: Int): Long
+    
+    fun isSignatureField(annotPtr: Long) = nativeIsSignatureField(annotPtr)
+    fun getSignatureStatus(annotPtr: Long) = nativeGetSignatureStatus(annotPtr)
+    fun getSignatureCount(docPtr: Long) = nativeGetSignatureCount(docPtr)
+    fun getSignatureAtIndex(docPtr: Long, index: Int) = nativeGetSignatureAtIndex(docPtr, index)
+    
+    // --- Appearance Stream Support ---
+    private external fun nativeGetAnnotAppearanceStream(annotPtr: Long): ByteArray?
+    private external fun nativeSetAnnotAppearanceStream(annotPtr: Long, appearanceStream: ByteArray): Boolean
+    private external fun nativeGenerateAnnotDefaultAppearance(annotPtr: Long): Boolean
+    
+    fun getAnnotAppearanceStream(annotPtr: Long) = nativeGetAnnotAppearanceStream(annotPtr)
+    fun setAnnotAppearanceStream(annotPtr: Long, appearanceStream: ByteArray) = nativeSetAnnotAppearanceStream(annotPtr, appearanceStream)
+    fun generateAnnotDefaultAppearance(annotPtr: Long) = nativeGenerateAnnotDefaultAppearance(annotPtr)
+    
+    // --- XFA Form Support ---
+    private external fun nativeHasXFAForms(docPtr: Long): Boolean
+    private external fun nativeGetXFAPacketCount(docPtr: Long): Int
+    private external fun nativeGetXFAPacketName(docPtr: Long, index: Int): String?
+    private external fun nativeGetXFAPacketContent(docPtr: Long, index: Int): ByteArray?
+    
+    fun hasXFAForms(docPtr: Long) = nativeHasXFAForms(docPtr)
+    fun getXFAPacketCount(docPtr: Long) = nativeGetXFAPacketCount(docPtr)
+    fun getXFAPacketName(docPtr: Long, index: Int) = nativeGetXFAPacketName(docPtr, index)
+    fun getXFAPacketContent(docPtr: Long, index: Int) = nativeGetXFAPacketContent(docPtr, index)
+    
+    // --- Appearance Settings ---
+    private external fun nativeSetFormFieldHighlightColor(formPtr: Long, r: Int, g: Int, b: Int, a: Int)
+    private external fun nativeSetFormFieldHighlightAlpha(formPtr: Long, alpha: Int)
+    private external fun nativeRemoveFormFieldHighlight(formPtr: Long)
+    
+    fun setFormFieldHighlightColor(formPtr: Long, r: Int, g: Int, b: Int, a: Int) = nativeSetFormFieldHighlightColor(formPtr, r, g, b, a)
+    fun setFormFieldHighlightAlpha(formPtr: Long, alpha: Int) = nativeSetFormFieldHighlightAlpha(formPtr, alpha)
+    fun removeFormFieldHighlight(formPtr: Long) = nativeRemoveFormFieldHighlight(formPtr)
 }
 
 /**

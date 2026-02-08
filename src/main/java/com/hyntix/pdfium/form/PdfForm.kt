@@ -125,6 +125,202 @@ class PdfForm(
      */
     fun isClosed(): Boolean = isClosed
     
+    // --- Form Data Export/Import ---
+    
+    /**
+     * Export all form data as a snapshot.
+     *
+     * @return FormDataSnapshot containing all form fields
+     */
+    fun exportFormData(): FormDataSnapshot {
+        checkNotClosed()
+        val fields = mutableListOf<FormFieldData>()
+        
+        // Iterate through all pages to collect form fields
+        val pageCount = core.getPageCount(docPtr)
+        for (pageIndex in 0 until pageCount) {
+            val pagePtr = core.loadPage(docPtr, pageIndex)
+            if (pagePtr != 0L) {
+                try {
+                    val fieldCount = core.getFormFieldCount(formPtr, pagePtr)
+                    for (i in 0 until fieldCount) {
+                        val annotPtr = core.getFormFieldAtIndex(formPtr, pagePtr, i)
+                        if (annotPtr != 0L) {
+                            val name = core.getFormFieldName(formPtr, annotPtr) ?: ""
+                            val type = FormFieldType.fromValue(core.getFormFieldType(formPtr, annotPtr))
+                            val value = core.getFormFieldValue(formPtr, annotPtr) ?: ""
+                            val defaultValue = core.getFormFieldDefaultValue(formPtr, annotPtr) ?: ""
+                            val isRequired = core.isFormFieldRequired(formPtr, annotPtr)
+                            val isReadOnly = core.isFormFieldReadOnly(formPtr, annotPtr)
+                            val maxLength = core.getFormFieldMaxLength(formPtr, annotPtr)
+                            
+                            // Get options for combo box and list box fields
+                            val options = if (type == FormFieldType.COMBOBOX || type == FormFieldType.LISTBOX) {
+                                val optionCount = core.getFormFieldOptionCount(formPtr, annotPtr)
+                                (0 until optionCount).mapNotNull { idx ->
+                                    val label = core.getFormFieldOptionLabel(formPtr, annotPtr, idx)
+                                    val optValue = core.getFormFieldOptionValue(formPtr, annotPtr, idx)
+                                    val isSelected = core.isFormFieldOptionSelected(formPtr, annotPtr, idx)
+                                    if (label != null && optValue != null) {
+                                        FormFieldOption(label, optValue, isSelected, idx)
+                                    } else null
+                                }
+                            } else {
+                                emptyList()
+                            }
+                            
+                            fields.add(
+                                FormFieldData(
+                                    name = name,
+                                    type = type,
+                                    value = value,
+                                    defaultValue = defaultValue,
+                                    isRequired = isRequired,
+                                    isReadOnly = isReadOnly,
+                                    maxLength = maxLength,
+                                    options = options
+                                )
+                            )
+                        }
+                    }
+                } finally {
+                    core.closePage(pagePtr)
+                }
+            }
+        }
+        
+        val formType = core.getFormType(docPtr)
+        return FormDataSnapshot(formType, fields)
+    }
+    
+    /**
+     * Export form data as JSON string.
+     *
+     * @return JSON string representation of form data
+     */
+    fun exportAsJson(): String {
+        checkNotClosed()
+        return exportFormData().toJson()
+    }
+    
+    /**
+     * Import form data from JSON string.
+     *
+     * @param json JSON string containing form data
+     * @return True if import was successful
+     */
+    fun importFromJson(json: String): Boolean {
+        checkNotClosed()
+        return try {
+            val snapshot = FormDataSnapshot.fromJson(json)
+            restoreFromSnapshot(snapshot)
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    /**
+     * Create a snapshot of current form data.
+     *
+     * @return FormDataSnapshot
+     */
+    fun createFormDataSnapshot(): FormDataSnapshot {
+        return exportFormData()
+    }
+    
+    /**
+     * Restore form data from a snapshot.
+     *
+     * @param snapshot FormDataSnapshot to restore
+     * @return True if restoration was successful
+     */
+    fun restoreFromSnapshot(snapshot: FormDataSnapshot): Boolean {
+        checkNotClosed()
+        
+        try {
+            val pageCount = core.getPageCount(docPtr)
+            for (pageIndex in 0 until pageCount) {
+                val pagePtr = core.loadPage(docPtr, pageIndex)
+                if (pagePtr != 0L) {
+                    try {
+                        val fieldCount = core.getFormFieldCount(formPtr, pagePtr)
+                        for (i in 0 until fieldCount) {
+                            val annotPtr = core.getFormFieldAtIndex(formPtr, pagePtr, i)
+                            if (annotPtr != 0L) {
+                                val name = core.getFormFieldName(formPtr, annotPtr)
+                                val fieldData = snapshot.fields.find { it.name == name }
+                                
+                                if (fieldData != null) {
+                                    // Set the field value
+                                    core.setFormFieldValue(formPtr, pagePtr, annotPtr, fieldData.value)
+                                    
+                                    // For combo box and list box, set selected options
+                                    if (fieldData.type == FormFieldType.COMBOBOX || 
+                                        fieldData.type == FormFieldType.LISTBOX) {
+                                        fieldData.options.forEach { option ->
+                                            core.setFormFieldOptionSelection(
+                                                formPtr, pagePtr, annotPtr, 
+                                                option.index, option.isSelected
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } finally {
+                        core.closePage(pagePtr)
+                    }
+                }
+            }
+            return true
+        } catch (e: Exception) {
+            return false
+        }
+    }
+    
+    // --- Appearance Settings ---
+    
+    /**
+     * Set form field highlight color.
+     *
+     * @param r Red component (0-255)
+     * @param g Green component (0-255)
+     * @param b Blue component (0-255)
+     * @param a Alpha component (0-255)
+     */
+    fun setFormFieldHighlightColor(r: Int, g: Int, b: Int, a: Int) {
+        checkNotClosed()
+        core.setFormFieldHighlightColor(formPtr, r, g, b, a)
+    }
+    
+    /**
+     * Set form field highlight alpha (opacity).
+     *
+     * @param alpha Alpha value (0-255, where 255 is fully opaque)
+     */
+    fun setFormFieldHighlightAlpha(alpha: Int) {
+        checkNotClosed()
+        core.setFormFieldHighlightAlpha(formPtr, alpha)
+    }
+    
+    /**
+     * Remove form field highlight.
+     */
+    fun removeFormFieldHighlight() {
+        checkNotClosed()
+        core.removeFormFieldHighlight(formPtr)
+    }
+    
+    /**
+     * Get the form type.
+     *
+     * @return Form type value
+     */
+    fun getFormType(): Int {
+        checkNotClosed()
+        return core.getFormType(docPtr)
+    }
+    
     private fun checkNotClosed() {
         check(!isClosed) { "Form has been closed" }
     }

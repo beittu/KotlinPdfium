@@ -694,5 +694,86 @@ class PdfPage internal constructor(
             core.closeAnnot(annotPtr)
         }
     }
+    
+    // --- Signature Field Support ---
+    
+    /**
+     * Get a signature field at the specified index.
+     *
+     * @param index The 0-based index of the signature field
+     * @return SignatureField if found, null otherwise
+     */
+    fun getSignatureField(index: Int): com.hyntix.pdfium.signature.SignatureField? {
+        checkNotClosed()
+        val annotPtr = core.getAnnot(pagePtr, index)
+        if (annotPtr == 0L) return null
+        
+        return try {
+            if (core.isSignatureField(annotPtr)) {
+                val status = com.hyntix.pdfium.signature.SignatureStatus.fromValue(
+                    core.getSignatureStatus(annotPtr)
+                )
+                val rect = core.getAnnotRect(annotPtr)?.let {
+                    android.graphics.RectF(it[0], it[1], it[2], it[3])
+                } ?: android.graphics.RectF()
+                
+                com.hyntix.pdfium.signature.SignatureField(
+                    name = "Signature${index + 1}",
+                    rect = rect,
+                    status = status
+                )
+            } else {
+                null
+            }
+        } finally {
+            core.closeAnnot(annotPtr)
+        }
+    }
+    
+    /**
+     * Get all signature fields on this page.
+     *
+     * @return List of signature fields
+     */
+    fun getSignatureFields(): List<com.hyntix.pdfium.signature.SignatureField> {
+        checkNotClosed()
+        val count = annotationCount
+        val signatures = mutableListOf<com.hyntix.pdfium.signature.SignatureField>()
+        
+        for (i in 0 until count) {
+            getSignatureField(i)?.let { signatures.add(it) }
+        }
+        
+        return signatures
+    }
+    
+    /**
+     * Get the signature status for this page.
+     *
+     * Returns UNSIGNED if no signatures, SIGNED if all are signed,
+     * MODIFIED if any are modified, or ERROR if there's an error.
+     *
+     * @return SignatureStatus
+     */
+    fun getSignatureStatus(): com.hyntix.pdfium.signature.SignatureStatus {
+        checkNotClosed()
+        val signatures = getSignatureFields()
+        
+        if (signatures.isEmpty()) {
+            return com.hyntix.pdfium.signature.SignatureStatus.UNSIGNED
+        }
+        
+        val hasModified = signatures.any { it.isModified() }
+        if (hasModified) {
+            return com.hyntix.pdfium.signature.SignatureStatus.MODIFIED
+        }
+        
+        val allSigned = signatures.all { it.isSigned() }
+        return if (allSigned) {
+            com.hyntix.pdfium.signature.SignatureStatus.SIGNED
+        } else {
+            com.hyntix.pdfium.signature.SignatureStatus.UNSIGNED
+        }
+    }
 }
 
